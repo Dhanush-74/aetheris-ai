@@ -1,0 +1,9 @@
+node_modules/
+.env
+*.log
+.local-data.json
+frontend/dist/
+.DS_Store
+Thumbs.db
+*.pdf
+testIntegration.js
