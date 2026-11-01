@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: aetheris-ai
+    env: node
+    plan: free
+    buildCommand: npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend
+    startCommand: node backend/src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
+      - key: MAX_HISTORY_MESSAGES
+        value: 20
