@@ -3,7 +3,7 @@ services:
     name: aetheris-ai
     env: node
     plan: free
-    buildCommand: npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend
+    buildCommand: npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm --prefix backend install
     startCommand: node backend/src/server.js
     envVars:
       - key: NODE_ENV

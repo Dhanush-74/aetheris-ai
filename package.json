@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Aetheris AI - Premium AI Chatbot powered by Google Gemini",
   "scripts": {
-    "build": "npm install --prefix frontend && npm run build --prefix frontend && npm install --prefix backend",
+    "build": "npm --prefix frontend install --include=dev && npm --prefix frontend run build && npm --prefix backend install",
     "start": "node backend/src/server.js"
   },
   "engines": {
