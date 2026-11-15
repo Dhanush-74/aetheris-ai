@@ -45,12 +45,27 @@ const formatGeminiHistory = (messages) => {
 // ─── Smart Universal Fallback ────────────────────────────────────────────────
 // This is called ONLY when ALL live Gemini models are unavailable (quota/network).
 // It uses pattern detection to give a real, useful answer for any topic.
-const generateFallback = async function* (prompt) {
+const generateFallback = async function* (prompt, attachments = []) {
   const p = prompt.toLowerCase().trim();
   let text = '';
 
+  // ── 0. Attached Files / Images fallback ──
+  if (attachments && attachments.length > 0) {
+    const fileNames = attachments.map(a => `\`${a.name || 'Attached File'}\``).join(', ');
+    text = `### Analysis of Attached File(s)
+
+I have received and registered your uploaded file(s): ${fileNames}.
+
+> [!NOTE]
+> **Observation & Verification**
+> The file data has been successfully ingested into the system context. Full neural vision processing requires live connectivity with Google Gemini multimodal inference services.
+
+**Summary of your prompt:** "${prompt}"
+
+If you have specific questions or require text extraction, code review, or structural analysis for these documents, please specify your query and I will be glad to assist you.`;
+
   // ── 1. Slang / informal ──
-  if (isInformalQuery(prompt)) {
+  } else if (isInformalQuery(prompt)) {
     text = `> [!IMPORTANT]
 > **Formal Communication Required**
 > Please do not use informal language. Only formal, professional communication is permitted on this platform.
@@ -752,6 +767,7 @@ Would you like me to elaborate further on any specific aspect, provide a tailore
 // ─── Main Streaming Function ─────────────────────────────────────────────────
 async function* streamGeminiResponse({
   prompt,
+  attachments = [],
   history = [],
   apiKey = null,
   model = null,
@@ -759,19 +775,20 @@ async function* streamGeminiResponse({
 }) {
   // Slang check — instant block, no API call
   if (isInformalQuery(prompt)) {
-    yield* generateFallback(prompt);
+    yield* generateFallback(prompt, attachments);
     return;
   }
 
   const activeKey = apiKey || config.GEMINI_API_KEY;
   if (!activeKey) {
-    yield* generateFallback(prompt);
+    yield* generateFallback(prompt, attachments);
     return;
   }
 
   const systemPrompt = systemInstruction ||
     `You are Aetheris AI — a formal, expert AI assistant powered by Google Gemini.
 You answer ALL questions accurately and comprehensively: coding, travel, finance, mathematics, science, history, writing, general knowledge, and more.
+You also analyze attached images, screenshots, code files, and documents with extreme precision.
 NEVER refuse a legitimate question. Always give a helpful, thorough answer.
 Formatting rules:
 - Use clean Markdown with headers (##, ###), bold, tables, and bullet points
@@ -782,6 +799,27 @@ If informal slang is detected (macha, bro, dude, yo, etc.), respond: "Please do 
 
   const formattedHistory = formatGeminiHistory(history);
   const genAI = new GoogleGenerativeAI(activeKey);
+
+  // Prepare multimodal parts if attachments are present
+  const parts = [];
+  if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+    for (const att of attachments) {
+      if (att.data && att.mimeType) {
+        const rawBase64 = att.data.includes(';base64,') ? att.data.split(';base64,')[1] : att.data;
+        parts.push({
+          inlineData: {
+            mimeType: att.mimeType,
+            data: rawBase64
+          }
+        });
+      } else if (att.textContent) {
+        parts.push(`\n[Attached File: ${att.name || 'document'}]:\n${att.textContent}\n`);
+      }
+    }
+  }
+  parts.push(prompt || 'Please analyze this attachment in detail.');
+
+  const messagePayload = parts.length > 1 ? parts : prompt;
 
   // Build model list: user-requested first, then fallbacks
   const requested = model || config.GEMINI_MODEL || 'gemini-3.6-flash';
@@ -804,7 +842,7 @@ If informal slang is detected (macha, bro, dude, yo, etc.), respond: "Please do 
         generationConfig: { maxOutputTokens: 4096, temperature: 0.7 }
       });
 
-      const result = await chat.sendMessageStream(prompt);
+      const result = await chat.sendMessageStream(messagePayload);
 
       for await (const chunk of result.stream) {
         const txt = chunk.text();
@@ -839,7 +877,7 @@ If informal slang is detected (macha, bro, dude, yo, etc.), respond: "Please do 
 
   // All models failed → smart fallback
   logger.info('All models unavailable — using built-in fallback engine');
-  yield* generateFallback(prompt);
+  yield* generateFallback(prompt, attachments);
 }
 
 module.exports = { streamGeminiResponse, formatGeminiHistory };

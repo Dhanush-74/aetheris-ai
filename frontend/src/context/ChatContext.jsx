@@ -110,17 +110,21 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  // Send message
-  const sendMessage = async (promptText) => {
-    if (!promptText || !promptText.trim() || isStreaming) return;
+  // Send message with optional file/image attachments
+  const sendMessage = async (promptText, attachments = []) => {
+    const hasText = promptText && promptText.trim().length > 0;
+    const hasAttachments = attachments && attachments.length > 0;
 
-    const trimmedPrompt = promptText.trim();
+    if ((!hasText && !hasAttachments) || isStreaming) return;
+
+    const trimmedPrompt = hasText ? promptText.trim() : 'Please analyze the attached file(s) and provide a detailed analysis.';
 
     // Optimistic user message
     const tempUserMsg = {
       _id: 'temp-u-' + Date.now(),
       role: 'user',
       content: trimmedPrompt,
+      attachments: attachments || [],
       createdAt: new Date().toISOString()
     };
 
@@ -137,6 +141,7 @@ export const ChatProvider = ({ children }) => {
       {
         conversationId: targetConvId,
         prompt: trimmedPrompt,
+        attachments: attachments || [],
         model: geminiModel,
         apiKeyOverride: apiKeyOverride || undefined,
         systemInstruction: systemInstruction || undefined
