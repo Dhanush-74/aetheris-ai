@@ -199,12 +199,14 @@ const clearConversations = async (req, res, next) => {
 // Send message & stream Gemini response via SSE
 const sendMessageStream = async (req, res, next) => {
   const userId = req.user._id || req.user.id;
-  const { conversationId, prompt, model, apiKeyOverride, systemInstruction } = req.body;
+  const { conversationId, prompt, attachments = [], model, apiKeyOverride, systemInstruction } = req.body;
 
-  if (!prompt || !prompt.trim()) {
+  const effectivePrompt = (prompt && prompt.trim()) ? prompt.trim() : (attachments && attachments.length > 0 ? 'Please analyze the attached file(s) and provide a detailed, formal response.' : '');
+
+  if (!effectivePrompt) {
     return res.status(400).json({
       success: false,
-      message: 'Question prompt cannot be empty'
+      message: 'Question prompt or file attachment is required'
     });
   }
 
@@ -253,7 +255,8 @@ const sendMessageStream = async (req, res, next) => {
         conversationId: convId,
         userId,
         role: 'user',
-        content: prompt.trim()
+        content: effectivePrompt,
+        attachments
       });
       await Conversation.findByIdAndUpdate(convId, { updatedAt: new Date() });
     } else {
@@ -261,7 +264,8 @@ const sendMessageStream = async (req, res, next) => {
         conversationId: convId,
         userId,
         role: 'user',
-        content: prompt.trim()
+        content: effectivePrompt,
+        attachments
       });
     }
 
@@ -291,7 +295,8 @@ const sendMessageStream = async (req, res, next) => {
 
     // 5. Call Gemini stream
     const stream = streamGeminiResponse({
-      prompt: prompt.trim(),
+      prompt: effectivePrompt,
+      attachments,
       history,
       apiKey: apiKeyOverride,
       model,
