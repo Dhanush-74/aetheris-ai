@@ -72,8 +72,15 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/user', userRoutes);
 
 // Production Static Serving for Frontend SPA
-const frontendDist = path.resolve(__dirname, '../../frontend/dist');
+const distPaths = [
+  path.resolve(__dirname, '../../frontend/dist'),
+  path.resolve(process.cwd(), 'frontend/dist'),
+  path.resolve(__dirname, '../dist')
+];
+const frontendDist = distPaths.find(p => fs.existsSync(p)) || distPaths[0];
+
 if (fs.existsSync(frontendDist)) {
+  logger.info(`Serving static frontend build from: ${frontendDist}`);
   app.use(express.static(frontendDist));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) {
@@ -81,6 +88,8 @@ if (fs.existsSync(frontendDist)) {
     }
     res.sendFile(path.resolve(frontendDist, 'index.html'));
   });
+} else {
+  logger.warn(`Frontend dist folder not found at: ${frontendDist}`);
 }
 
 // Error handling middleware
@@ -88,13 +97,19 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Start server
-const startServer = async () => {
-  await connectDB();
+const startServer = () => {
+  const PORT = process.env.PORT || config.PORT || 5000;
+  const HOST = '0.0.0.0';
 
-  const server = app.listen(config.PORT, () => {
-    logger.info(`✨ Aetheris AI Backend is running on http://localhost:${config.PORT}`);
+  const server = app.listen(PORT, HOST, () => {
+    logger.info(`✨ Aetheris AI Backend is running on http://${HOST}:${PORT}`);
     logger.info(`📡 Client URL configured as: ${config.CLIENT_URL}`);
     logger.info(`🤖 Active Gemini Model: ${config.GEMINI_MODEL}`);
+  });
+
+  // Connect to DB asynchronously so port binding is instant for Render health checks
+  connectDB().catch(err => {
+    logger.warn('Initial DB connection attempt ended:', err.message);
   });
 
   process.on('unhandledRejection', (err) => {
