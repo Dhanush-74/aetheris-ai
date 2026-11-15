@@ -12,9 +12,7 @@ import {
   RotateCw,
   ThumbsUp,
   ThumbsDown,
-  Cpu,
-  FileText,
-  ExternalLink
+  Cpu
 } from 'lucide-react';
 import { CodeBlock } from './CodeBlock';
 import { useChat } from '../context/ChatContext';
@@ -107,43 +105,6 @@ export const MessageBubble = ({
               : 'glass-panel text-slate-100 dark:text-slate-200 rounded-tl-none border border-slate-700/50 dark:border-white/10'
           }`}
         >
-          {/* Render User Attachments if present */}
-          {message.attachments && message.attachments.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {message.attachments.map((att, idx) => {
-                const isImage = (att.mimeType && att.mimeType.startsWith('image/')) || (att.preview);
-                const imgSrc = att.preview || (att.data ? `data:${att.mimeType || 'image/jpeg'};base64,${att.data}` : att.url);
-
-                if (isImage && imgSrc) {
-                  return (
-                    <div key={idx} className="group relative rounded-xl overflow-hidden border border-white/20 shadow-md max-w-xs">
-                      <img
-                        src={imgSrc}
-                        alt={att.name || 'Attached image'}
-                        className="max-h-56 max-w-full object-cover rounded-xl transition-transform duration-200 group-hover:scale-105 cursor-pointer"
-                        onClick={() => window.open(imgSrc, '_blank')}
-                      />
-                      <div className="absolute bottom-0 inset-x-0 bg-slate-950/70 backdrop-blur-sm px-2 py-1 text-[11px] text-slate-200 flex items-center justify-between">
-                        <span className="truncate max-w-[140px] font-medium">{att.name || 'Image'}</span>
-                        <ExternalLink className="w-3 h-3 text-cyan-300" />
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/20 border border-white/15 text-xs text-white"
-                  >
-                    <FileText className="w-4 h-4 text-cyan-300 flex-shrink-0" />
-                    <span className="truncate max-w-[160px] font-medium">{att.name || 'Attached document'}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
           {isUser ? (
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           ) : (

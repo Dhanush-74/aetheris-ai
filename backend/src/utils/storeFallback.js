@@ -151,14 +151,13 @@ class StoreFallback {
   }
 
   // Message operations
-  async createMessage({ conversationId, userId, role, content, attachments = [], modelUsed = '', feedback = 'none' }) {
+  async createMessage({ conversationId, userId, role, content, modelUsed = '', feedback = 'none' }) {
     const msg = {
       _id: uuidv4(),
       conversationId,
       userId: userId.toString(),
       role,
       content,
-      attachments,
       modelUsed,
       feedback,
       createdAt: new Date().toISOString()

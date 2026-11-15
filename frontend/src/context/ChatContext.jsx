@@ -110,21 +110,17 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  // Send message with optional file/image attachments
-  const sendMessage = async (promptText, attachments = []) => {
-    const hasText = promptText && promptText.trim().length > 0;
-    const hasAttachments = attachments && attachments.length > 0;
+  // Send message
+  const sendMessage = async (promptText) => {
+    if (!promptText || !promptText.trim() || isStreaming) return;
 
-    if ((!hasText && !hasAttachments) || isStreaming) return;
-
-    const trimmedPrompt = hasText ? promptText.trim() : 'Please analyze the attached file(s) and provide a detailed analysis.';
+    const trimmedPrompt = promptText.trim();
 
     // Optimistic user message
     const tempUserMsg = {
       _id: 'temp-u-' + Date.now(),
       role: 'user',
       content: trimmedPrompt,
-      attachments: attachments || [],
       createdAt: new Date().toISOString()
     };
 
@@ -141,7 +137,6 @@ export const ChatProvider = ({ children }) => {
       {
         conversationId: targetConvId,
         prompt: trimmedPrompt,
-        attachments: attachments || [],
         model: geminiModel,
         apiKeyOverride: apiKeyOverride || undefined,
         systemInstruction: systemInstruction || undefined
@@ -196,9 +191,7 @@ export const ChatProvider = ({ children }) => {
     if (lastUserIndex === -1) return;
 
     const actualIndex = messages.length - 1 - lastUserIndex;
-    const lastUserMsg = messages[actualIndex];
-    const promptText = lastUserMsg.content;
-    const userAttachments = lastUserMsg.attachments || [];
+    const promptText = messages[actualIndex].content;
 
     // Trim messages back to that user message
     setMessages(messages.slice(0, actualIndex + 1));
@@ -213,7 +206,6 @@ export const ChatProvider = ({ children }) => {
       {
         conversationId: currentConversationId,
         prompt: promptText,
-        attachments: userAttachments,
         model: geminiModel,
         apiKeyOverride: apiKeyOverride || undefined,
         systemInstruction: systemInstruction || undefined

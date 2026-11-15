@@ -24,14 +24,6 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-    attachments: [
-      {
-        name: { type: String, default: '' },
-        mimeType: { type: String, default: '' },
-        data: { type: String, default: '' },
-        url: { type: String, default: '' }
-      }
-    ],
     feedback: {
       type: String,
       enum: ['like', 'dislike', 'none'],

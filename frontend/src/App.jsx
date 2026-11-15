@@ -14,7 +14,6 @@ import { ChatArea } from './components/ChatArea';
 import { ChatInput } from './components/ChatInput';
 import { SettingsModal } from './components/SettingsModal';
 import { AuthModal } from './components/AuthModal';
-import { ExportDropdown } from './components/ExportDropdown';
 import { Toast } from './components/Toast';
 
 function ChatDashboard() {
@@ -93,8 +92,6 @@ function ChatDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            <ExportDropdown />
-
             <button
               onClick={newChat}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700/60 text-slate-300 hover:text-white text-xs font-medium transition-colors"
